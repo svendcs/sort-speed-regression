@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 	///////////////////////////////////////////////////////////////////////////////
 	size_t times = 10;
 	size_t data = 10;
-	size_t memory = 1;
+	size_t memory = 50;
 			
 	///////////////////////////////////////////////////////////////////////////////
 	/// Read args
@@ -100,8 +100,9 @@ int main(int argc, char **argv) {
 	
 	memory_size_type count = data * 1024 * 1024 / sizeof(memory_size_type);
 
+	std::cout << "run" << std::setw(15) << "phase 0" << std::setw(15) << "phase 1" << std::setw(15) << "phase 2" << std::setw(15) << "phase 3"  << std::setw(15) << "total" << std::endl;
 	for(memory_size_type i = 0; i < times; ++i) {
-		std::cout << "Run " << i << std::endl;
+		std::cout << i << std::setw(15) << std::flush;
 		merge_sorter<memory_size_type, false> merge_sorter;
 		Timer timer;
 
@@ -112,7 +113,7 @@ int main(int argc, char **argv) {
 			merge_sorter.set_available_memory(memory * 1024 * 1024);
 		}
 		memory_size_type phase0 = timer.elapsed();
-		std::cout << "\tPhase 0: " << phase0 << std::endl;
+		std::cout << phase0 << std::setw(15) << std::flush;
 
 		// Phase 1 - Push elements
 		boost::mt19937 rng(42);
@@ -128,7 +129,8 @@ int main(int argc, char **argv) {
 			merge_sorter.end();
 		}
 		memory_size_type phase1 = timer.elapsed();
-		std::cout << "\tPhase 1: " << phase1 << std::endl;
+		std::cout << phase1 << std::setw(15) << std::flush;
+
 
 		// Phase 2 - Perform merges
 		dummy_progress_indicator pi;
@@ -137,7 +139,8 @@ int main(int argc, char **argv) {
 			merge_sorter.calc(pi);
 		}
 		memory_size_type phase2 = timer.elapsed();
-		std::cout << "\tPhase 2: " << phase2 << std::endl;
+		std::cout << phase2 << std::setw(15) << std::flush;
+
 
 		// Phase 3 - Pull
 		memory_size_type l = 0;
@@ -150,9 +153,8 @@ int main(int argc, char **argv) {
 			}
 		}
 		memory_size_type phase3 = timer.elapsed();
-		std::cout << "\tPhase 3: " << phase3 << std::endl;
-
-		std::cout << "\tTotal  : " << phase1+phase2+phase3 << std::endl;
+		std::cout << phase3 << std::setw(15) << std::flush;
+		std::cout << phase0+phase1+phase2+phase3 << std::endl;
 	}
 
 
