@@ -1,0 +1,21 @@
+# Compile TPIE Master
+cd tpie-master/build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j9 tpie
+cd ../..
+
+# Compile TPIE Faster
+cd tpie-faster/build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j9 tpie
+cd ../..
+
+# Make test
+make -j9
+
+# Run
+echo "Faster"
+./bin/faster 10 1000 400
+
+echo "Master" 10 1000 400
+./bin/master
