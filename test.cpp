@@ -93,6 +93,9 @@ int main(int argc, char **argv) {
 	///////////////////////////////////////////////////////////////////////////////
 	tpie::tpie_init();
 	//tpie::get_memory_manager().set_limit(memory*1024*1024);
+	std::cout << "Times: " << times << std::endl;
+	std::cout << "Data: " << data << "MiB" << std::endl;
+	std::cout << "Memory: " << memory << "MiB" << std::endl;
 
 	///////////////////////////////////////////////////////////////////////////////
 	/// Perform test
