@@ -14,8 +14,12 @@ cd ../..
 make -j9
 
 # Run
-echo "--- MASTER SORTING ---"
-./bin/master 5 $1 $2
+if [ "$1" != "faster" ]; then
+	echo "--- MASTER SORTING ---"
+	./bin/master 3 20000 4000;
+fi
 
-echo "--- EVEN-FASTER-SORTING ---"
-./bin/faster 5 $1 $2
+if [ "$1" != "master" ]; then
+	echo "--- EVEN-FASTER-SORTING ---";
+	./bin/faster 3 20000 4000;
+fi

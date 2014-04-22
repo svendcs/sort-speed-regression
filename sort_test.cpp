@@ -27,7 +27,6 @@
 #include <boost/random/mersenne_twister.hpp>
 
 using namespace tpie;
-using namespace tpie::pipelining;
 
 
 struct Timer {
@@ -127,7 +126,8 @@ int main(int argc, char **argv) {
 		{
 			merge_sorter.begin();
 			for(memory_size_type i = 0; i < count; ++i) {
-				merge_sorter.push(generator());
+				//merge_sorter.push(generator());
+				merge_sorter.push(count - i);
 			}
 			merge_sorter.end();
 		}
@@ -149,11 +149,19 @@ int main(int argc, char **argv) {
 		memory_size_type l = 0;
 		timer.reset();
 		{
+			#ifdef FASTER
+			merge_sorter.pull_begin();
+			#endif
+
 			for(memory_size_type i = 0; i < count; ++i) {
 				memory_size_type e = merge_sorter.pull();
 				tp_assert(e >= l, "Elements were not sorted");
 				l = e;
 			}
+
+			#ifdef FASTER
+			merge_sorter.pull_end();
+			#endif
 		}
 		memory_size_type phase3 = timer.elapsed();
 		std::cout << phase3 << std::setw(15) << std::flush;
