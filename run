@@ -1,14 +1,18 @@
-# Compile TPIE Master
-cd tpie-master/build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-make -j9 tpie
-cd ../..
+if [ "$1" != "faster" ]; then
+	# Compile TPIE Master
+	cd tpie-master/build
+	cmake -DCMAKE_BUILD_TYPE=Release ..
+	make -j9 tpie
+	cd ../..
+fi
 
-# Compile TPIE Faster
-cd tpie-faster/build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-make -j9 tpie
-cd ../..
+if [ "$1" != "master" ]; then
+	# Compile TPIE Faster
+	cd tpie-faster/build
+	cmake -DCMAKE_BUILD_TYPE=Release ..
+	make -j9 tpie
+	cd ../..
+fi
 
 # Make test
 make -j9
@@ -16,10 +20,18 @@ make -j9
 # Run
 if [ "$1" != "faster" ]; then
 	echo "--- MASTER SORTING ---"
-	./bin/master 3 20000 4000;
+	for i in 1 2 3
+	do
+		rm -rf /var/tmp/*
+		./bin/master 1 200000 14000;
+	done
 fi
 
 if [ "$1" != "master" ]; then
 	echo "--- EVEN-FASTER-SORTING ---";
-	./bin/faster 3 20000 4000;
+	for i in 1 2 3
+	do
+		rm -rf /var/tmp/*
+		./bin/faster 1 200000 14000;
+	done
 fi

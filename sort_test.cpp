@@ -147,6 +147,7 @@ int main(int argc, char **argv) {
 
 		// Phase 3 - Pull
 		memory_size_type l = 0;
+		memory_size_type hest = 0;
 		timer.reset();
 		{
 			#ifdef FASTER
@@ -156,12 +157,17 @@ int main(int argc, char **argv) {
 			for(memory_size_type i = 0; i < count; ++i) {
 				memory_size_type e = merge_sorter.pull();
 				tp_assert(e >= l, "Elements were not sorted");
+				hest ^= e;
 				l = e;
 			}
 
 			#ifdef FASTER
 			merge_sorter.pull_end();
 			#endif
+		}
+
+		if(hest == 42) {
+			std::cout << "Det var dog underligt." << std::endl; // science
 		}
 		memory_size_type phase3 = timer.elapsed();
 		std::cout << phase3 << std::setw(15) << std::flush;
