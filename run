@@ -23,8 +23,12 @@ if [ "$1" != "faster" ]; then
 	for i in 1 2 3
 	do
 		rm -rf /var/tmp/*
-		./bin/master 1 200000 14000;
+		./bin/master 200000 14000 | tee output${i}.txt;
+		mv results.tab results${i}.tab
 	done
+
+	tar -czf master.tar.gz results1.tab results2.tab results3.tab output1.txt output2.txt output3.txt
+	rm results1.tab results2.tab results3.tab output1.txt output2.txt output3.txt
 fi
 
 if [ "$1" != "master" ]; then
@@ -32,6 +36,10 @@ if [ "$1" != "master" ]; then
 	for i in 1 2 3
 	do
 		rm -rf /var/tmp/*
-		./bin/faster 1 200000 14000;
+		./bin/faster 200000 14000 | tee output${i}.txt;
+		mv results.tab results${i}.tab
 	done
+
+	tar -czf faster.tar.gz results1.tab results2.tab results3.tab output1.txt output2.txt output3.txt
+	rm results1.tab results2.tab results3.tab output1.txt output2.txt output3.txt
 fi
