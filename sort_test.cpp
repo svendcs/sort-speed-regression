@@ -52,6 +52,33 @@ void usage() {
 	std::cout << "Parameters: [times] [data/MiB] [memory/MiB]" << std::endl;
 }
 
+struct LargeWithSmallComp {
+	memory_size_type s1;
+	memory_size_type s2;
+	memory_size_type s3;
+	memory_size_type s4;
+	memory_size_type s5;
+	memory_size_type s6;
+	memory_size_type s7;
+	memory_size_type s8;
+	memory_size_type s9;
+	memory_size_type s10;
+
+	LargeWithSmallComp() : s1(0), s2(0), s3(0), s4(0), s5(0), s6(0), s7(0), s8(0), s9(0) {}
+};
+
+class pred {
+public:
+	typedef const LargeWithSmallComp& item_type;
+	typedef item_type first_argument_type;
+	typedef item_type second_argument_type;
+	typedef bool result_type;
+
+	bool operator()(item_type a, item_type b) {
+		return a.s1 < b.s1;
+	}
+};
+
 int main(int argc, char **argv) {
 	///////////////////////////////////////////////////////////////////////////////
 	/// Default values
@@ -89,9 +116,9 @@ int main(int argc, char **argv) {
 	/// Perform test
 	///////////////////////////////////////////////////////////////////////////////
 
-	memory_size_type count = data * 1024 * 1024 / sizeof(memory_size_type);
+	memory_size_type count = data * 1024 * 1024 / sizeof(LargeWithSmallComp);
 
-	merge_sorter<memory_size_type, false> merge_sorter;
+	merge_sorter<LargeWithSmallComp, false, pred> merge_sorter;
 	Timer timer;
 
 	// Phase 0 set parameters
@@ -103,20 +130,16 @@ int main(int argc, char **argv) {
 	memory_size_type phase0 = timer.elapsed();
 	std::cout << "Phase 0: " << phase0 << std::endl;
 
-	// Phase 1 - Push elements
-	boost::mt19937 rng(42);
-	boost::uniform_int<memory_size_type> dist(0, std::numeric_limits<memory_size_type>::max());
-	boost::variate_generator<boost::mt19937&, boost::uniform_int<memory_size_type> > generator(rng, dist);
-
-	StatReporter magic_karp("results.tab");
-	magic_karp.run();
+	StatReporter reporter("results.tab");
+	reporter.run();
+	LargeWithSmallComp e;
 
 	timer.reset();
 	{
 		merge_sorter.begin();
 		for(memory_size_type i = 0; i < count; ++i) {
-			//merge_sorter.push(generator());
-			merge_sorter.push(count - i);
+			e.s1 = i;
+			merge_sorter.push(e);
 		}
 		merge_sorter.end();
 	}
@@ -138,27 +161,33 @@ int main(int argc, char **argv) {
 	memory_size_type hest = 0;
 	timer.reset();
 	{
-		#ifdef FASTER
+		//log_info() << "<pull_begin>" << std::endl;
+		#ifdef FASTER // the interface is slightly changed
 		merge_sorter.pull_begin();
 		#endif
+		//log_info() << "</pull_begin>" << std::endl;
 
+		//log_info() << "<pull>" << std::endl;
 		for(memory_size_type i = 0; i < count; ++i) {
-			memory_size_type e = merge_sorter.pull();
-			tp_assert(e >= l, "Elements were not sorted");
-			hest ^= e;
-			l = e;
+			LargeWithSmallComp e = merge_sorter.pull();
+			//tp_assert(e.s1 >= l, "Elements were not sorted");
+			hest ^= e.s1;
+			l = e.s1;
 		}
+		//log_info() << "</pull>" << std::endl;
 
+		/*log_info() << "<pull_end>" << std::endl;
 		#ifdef FASTER
 		merge_sorter.pull_end();
 		#endif
+		log_info() << "</pull_end>" << std::endl;*/
 	}
 
 	if(hest == 42) {
 		std::cout << "Det var dog underligt." << std::endl; // science
 	}
 	memory_size_type phase3 = timer.elapsed();
-	magic_karp.stop();
+	reporter.stop();
 
 	std::cout << "Phase 3: " << phase3 << std::endl;
 	std::cout << "Total: " << phase0+phase1+phase2+phase3 << std::endl;

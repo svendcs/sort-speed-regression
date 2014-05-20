@@ -1,3 +1,22 @@
+# Parameters
+memory=10000
+data=200000
+tmp_rootdir=/var/tmp/
+tmp_subdir=speed-test/
+tmp_fulldir=$tmp_rootdir$tmp_subdir
+
+# Helper methods
+function reset_dir {
+	rm -rf $tmp_fulldir
+	mkdir $tmp_fulldir
+}
+
+function compile_results {
+	tar -czf $1 results1.tab results2.tab results3.tab output1.txt output2.txt output3.txt
+	rm results1.tab results2.tab results3.tab output1.txt output2.txt output3.txt
+}
+
+# TPIE compilation
 if [ "$1" != "faster" ]; then
 	# Compile TPIE Master
 	cd tpie-master/build
@@ -14,32 +33,33 @@ if [ "$1" != "master" ]; then
 	cd ../..
 fi
 
-# Make test
+# Test compilation
 make -j9
+
+# Output
+echo "Using directory $tmp_fulldir"
 
 # Run
 if [ "$1" != "faster" ]; then
 	echo "--- MASTER SORTING ---"
 	for i in 1 2 3
 	do
-		rm -rf /var/tmp/*
-		./bin/master 200000 14000 | tee output${i}.txt;
+		reset_dir
+		TMPDIR=$tmp_fulldir ./bin/master $data $memory |& tee output${i}.txt;
 		mv results.tab results${i}.tab
 	done
 
-	tar -czf master.tar.gz results1.tab results2.tab results3.tab output1.txt output2.txt output3.txt
-	rm results1.tab results2.tab results3.tab output1.txt output2.txt output3.txt
+	compile_results master.tar.gz
 fi
 
 if [ "$1" != "master" ]; then
 	echo "--- EVEN-FASTER-SORTING ---";
 	for i in 1 2 3
 	do
-		rm -rf /var/tmp/*
-		./bin/faster 200000 14000 | tee output${i}.txt;
+		reset_dir
+		TMPDIR=$tmp_fulldir ./bin/faster $data $memory |& tee output${i}.txt;
 		mv results.tab results${i}.tab
 	done
 
-	tar -czf faster.tar.gz results1.tab results2.tab results3.tab output1.txt output2.txt output3.txt
-	rm results1.tab results2.tab results3.tab output1.txt output2.txt output3.txt
+	compile_results faster.tar.gz
 fi
