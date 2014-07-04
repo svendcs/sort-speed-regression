@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Setup parameters
-memory=50
-data=10
+memory=100
+data=1000
 tmp_rootdir=/var/tmp/
 tmp_subdir=speed-test/
 tmp_fulldir=$tmp_rootdir$tmp_subdir

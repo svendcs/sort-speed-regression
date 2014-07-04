@@ -5,6 +5,7 @@
 
 #include <sys/time.h>
 #include <sys/resource.h>
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Report CPU usage
@@ -70,6 +71,7 @@ public:
 
 	void run() {
 		m_cpuTime = get_cputime();
+		m_time = m_start = boost::posix_time::microsec_clock::local_time();
 		m_thread = new boost::thread(boost::bind(&StatReporter::thread, this));
 	}
 
@@ -100,20 +102,33 @@ private:
 	}
 
 	void capture() {
-		size_t cpu_time = get_cputime();
-		size_t io = ioBytes();
+		// calculate cpu usage
+		float cpu_time_diff = get_cputime() - m_cpuTime;
+		float real_time_diff = (boost::posix_time::microsec_clock::local_time() - m_time).total_milliseconds();
+		float cpu_usage = cpu_time_diff / real_time_diff * 100.f;
 
-		float cpu_usage = float(cpu_time - m_cpuTime)/float(captureInterval);
+		// get time since start
+		size_t real_time = (boost::posix_time::microsec_clock::local_time() - m_start).total_seconds();
+
+		// get memory usage
 		float memory_usage = memoryUsage();
-		float io_bytes = ioBytes();
-		m_file << cpu_usage << " " << memory_usage << " " << io_bytes << std::endl;
 
-		m_cpuTime = cpu_time;
+		// get the number of bytes written and read
+		float io_bytes = ioBytes();
+
+		// output
+		m_file << real_time << " " << cpu_usage << " " << memory_usage << " " << io_bytes << std::endl;
+
+		// update variables
+		m_cpuTime = get_cputime();
+		m_time = boost::posix_time::microsec_clock::local_time();
 	}
 
 	size_t m_cpuTime;
-	std::ofstream m_file;
+	boost::posix_time::ptime m_time;
+	boost::posix_time::ptime m_start;
 	boost::thread * m_thread;
+	std::ofstream m_file;
 };
 
 #endif
