@@ -1,4 +1,4 @@
-all: bin/faster bin/master bin/run_formation
+all: bin/faster bin/master
 .PHONY: bin/faster bin/master
 bin:
 	mkdir bin
