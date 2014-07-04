@@ -27,171 +27,106 @@
 #include <boost/random/mersenne_twister.hpp>
 
 #include "stat_reporter.hpp"
+#include "report_timer.hpp"
 
 using namespace tpie;
 
-
-struct Timer {
-	Timer() {
-		start = boost::posix_time::microsec_clock::local_time();
-	}
-
-	memory_size_type elapsed() {
-		boost::posix_time::ptime current = boost::posix_time::microsec_clock::local_time();
-		return (current-start).total_milliseconds();
-	}
-
-	void reset() {
-		start = boost::posix_time::microsec_clock::local_time();
-	}
-private:
-	boost::posix_time::ptime start;
-};
-
 void usage() {
-	std::cout << "Parameters: [times] [data/MiB] [memory/MiB]" << std::endl;
+	std::cout << "Parameters: [report_file] [data/MiB = 10] [memory/MiB = 50]" << std::endl;
 }
 
-struct LargeWithSmallComp {
-	memory_size_type s1;
-	memory_size_type s2;
-	memory_size_type s3;
-	memory_size_type s4;
-	memory_size_type s5;
-	memory_size_type s6;
-	memory_size_type s7;
-	memory_size_type s8;
-	memory_size_type s9;
-	memory_size_type s10;
-
-	LargeWithSmallComp() : s1(0), s2(0), s3(0), s4(0), s5(0), s6(0), s7(0), s8(0), s9(0) {}
-};
-
-class pred {
-public:
-	typedef const LargeWithSmallComp& item_type;
-	typedef item_type first_argument_type;
-	typedef item_type second_argument_type;
-	typedef bool result_type;
-
-	bool operator()(item_type a, item_type b) {
-		return a.s1 < b.s1;
-	}
-};
-
 int main(int argc, char **argv) {
-	///////////////////////////////////////////////////////////////////////////////
-	/// Default values
-	///////////////////////////////////////////////////////////////////////////////
+	typedef memory_size_type item_type;
+	typedef std::less<item_type> pred_type;
+	item_type e = 0;
+
+	// default parameters
+	std::string report_file;
 	size_t data = 10;
 	size_t memory = 50;
 
-	///////////////////////////////////////////////////////////////////////////////
-	/// Read args
-	///////////////////////////////////////////////////////////////////////////////
-	if (argc > 1) {
-		std::stringstream(argv[1]) >> data;
-		if (!data) {
+	// parse parameters
+	if(argc <= 1) {
+		usage();
+		return EXIT_FAILURE;
+	}
+
+	if(argc > 1) {
+		report_file = std::string(argv[1]);
+	}
+
+	if(argc > 2) {
+		std::stringstream(argv[2]) >> data;
+		if(!data) {
 			usage();
 			return EXIT_FAILURE;
 		}
 	}
-	if (argc > 2) {
-		std::stringstream(argv[2]) >> memory;
-		if (!memory) {
+	if(argc > 3) {
+		std::stringstream(argv[4]) >> memory;
+		if(!memory) {
 			usage();
 			return EXIT_FAILURE;
 		}
 	}
 
-	///////////////////////////////////////////////////////////////////////////////
-	/// TPIE init
-	///////////////////////////////////////////////////////////////////////////////
+	// normalize parameters
+	data *= 1024 * 1024;
+	memory *= 1024 * 1024;
+
+	// Output header
+	std::cout << "Report file: \"" << report_file << "\"" << std::endl;
+	std::cout << "Data: " << data/1024/1024 << "MiB" << std::endl;
+	std::cout << "Memory: " << memory/1024/1024 << "MiB" << std::endl;
+
+	// init
 	tpie::tpie_init();
-	//tpie::get_memory_manager().set_limit(memory*1024*1024);
-	std::cout << "Data: " << data << "MiB" << std::endl;
-	std::cout << "Memory: " << memory << "MiB" << std::endl;
 
-	///////////////////////////////////////////////////////////////////////////////
-	/// Perform test
-	///////////////////////////////////////////////////////////////////////////////
+	memory_size_type count = data / sizeof(item_type);
+	merge_sorter<item_type, false, pred_type> merge_sorter;
 
-	memory_size_type count = data * 1024 * 1024 / sizeof(LargeWithSmallComp);
-
-	merge_sorter<LargeWithSmallComp, false, pred> merge_sorter;
-	Timer timer;
-
-	// Phase 0 set parameters
+	// Initialization phase: set parameters
 	{
-		//merge_sorter.set_available_memory(get_memory_manager().available());
-		//merge_sorter.set_parameters(get_block_size() / sizeof(memory_size_type), 32);
-		merge_sorter.set_available_memory(memory * 1024 * 1024);
+		report_timer timer("Initialization phase");
+		merge_sorter.set_available_memory(memory);
 	}
-	memory_size_type phase0 = timer.elapsed();
-	std::cout << "Phase 0: " << phase0 << std::endl;
 
-	StatReporter reporter("results.tab");
+	// First phase: Push items
+	StatReporter reporter(report_file);
 	reporter.run();
-	LargeWithSmallComp e;
 
-	timer.reset();
 	{
+		report_timer timer("First phase");
 		merge_sorter.begin();
-		for(memory_size_type i = 0; i < count; ++i) {
-			e.s1 = i;
-			merge_sorter.push(e);
-		}
+		for(memory_size_type i = 0; i < count; ++i)
+			merge_sorter.push(++e);
 		merge_sorter.end();
 	}
-	memory_size_type phase1 = timer.elapsed();
-	std::cout << "Phase 1: " << phase1 << std::endl;
 
-
-	// Phase 2 - Perform merges
+	// Second phase: Perform potential merges
 	dummy_progress_indicator pi;
-	timer.reset();
 	{
+		report_timer timer("Second phase");
 		merge_sorter.calc(pi);
 	}
-	memory_size_type phase2 = timer.elapsed();
-	std::cout << "Phase 2: " << phase2 << std::endl;
 
 	// Phase 3 - Pull
-	memory_size_type l = 0;
-	memory_size_type hest = 0;
-	timer.reset();
+	item_type hest = e;
 	{
-		//log_info() << "<pull_begin>" << std::endl;
-		#ifdef FASTER // the interface is slightly changed
+		report_timer timer("Third phase");
+		#ifdef FASTER
 		merge_sorter.pull_begin();
 		#endif
-		//log_info() << "</pull_begin>" << std::endl;
 
-		//log_info() << "<pull>" << std::endl;
 		for(memory_size_type i = 0; i < count; ++i) {
-			LargeWithSmallComp e = merge_sorter.pull();
-			//tp_assert(e.s1 >= l, "Elements were not sorted");
-			hest ^= e.s1;
-			l = e.s1;
+			item_type j = merge_sorter.pull();
+			hest *= j;
 		}
-		//log_info() << "</pull>" << std::endl;
-
-		/*log_info() << "<pull_end>" << std::endl;
-		#ifdef FASTER
-		merge_sorter.pull_end();
-		#endif
-		log_info() << "</pull_end>" << std::endl;*/
 	}
 
-	if(hest == 42) {
-		std::cout << "Det var dog underligt." << std::endl; // science
-	}
-	memory_size_type phase3 = timer.elapsed();
-	reporter.stop();
+	if(hest == e) std::cout << "Det var dog underligt." << std::endl;
 
-	std::cout << "Phase 3: " << phase3 << std::endl;
-	std::cout << "Total: " << phase0+phase1+phase2+phase3 << std::endl;
-
+	// Clean-up
 	tpie_finish();
 	return 0;
 }

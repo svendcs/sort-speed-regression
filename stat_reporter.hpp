@@ -61,7 +61,7 @@ public:
 	const size_t captureInterval = 2;
 
 	StatReporter(const std::string & fileName) : m_file(fileName) {
-		m_file << "# cpuUsage memoryUsage ioBytes" << std::endl;
+		m_file << "# time cpu_usage memory_usage io_bytes" << std::endl;
 	}
 
 	~StatReporter() {
