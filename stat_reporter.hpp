@@ -108,7 +108,7 @@ private:
 		float cpu_usage = cpu_time_diff / real_time_diff * 100.f;
 
 		// get time since start
-		size_t real_time = (boost::posix_time::microsec_clock::local_time() - m_start).total_seconds();
+		size_t real_time = (boost::posix_time::microsec_clock::local_time() - m_start).total_milliseconds();
 
 		// get memory usage
 		float memory_usage = memoryUsage();
