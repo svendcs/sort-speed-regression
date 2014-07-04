@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	if(argc > 3) {
-		std::stringstream(argv[4]) >> memory;
+		std::stringstream(argv[3]) >> memory;
 		if(!memory) {
 			usage();
 			return EXIT_FAILURE;

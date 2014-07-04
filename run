@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Setup parameters
-memory=3000
-data=200000
+memory=50
+data=10
 tmp_rootdir=/var/tmp/
 tmp_subdir=speed-test/
-tmp_fulldir="$tmp_rootdir$tmp_subdir"
+tmp_fulldir=$tmp_rootdir$tmp_subdir
 
 # Helper methods
 function reset_dir {
@@ -45,6 +45,8 @@ if [ "$1" != "faster" ]; then
 	do
 		reset_dir
 		TMPDIR=$tmp_fulldir ./bin/master results${i}.tab $data $memory |& tee output${i}.txt;
+		echo
+		echo
 	done
 
 	compile_results master.tar.gz
@@ -56,7 +58,8 @@ if [ "$1" != "master" ]; then
 	do
 		reset_dir
 		TMPDIR=$tmp_fulldir ./bin/faster results${i}.tab $data $memory |& tee output${i}.txt;
-		mv results.tab results${i}.tab
+		echo
+		echo
 	done
 
 	compile_results faster.tar.gz
