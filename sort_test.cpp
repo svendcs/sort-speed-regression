@@ -38,7 +38,6 @@ void usage() {
 int main(int argc, char **argv) {
 	typedef memory_size_type item_type;
 	typedef std::less<item_type> pred_type;
-	item_type e = 0;
 
 	// default parameters
 	std::string report_file;
@@ -85,6 +84,10 @@ int main(int argc, char **argv) {
 	memory_size_type count = data / sizeof(item_type);
 	merge_sorter<item_type, false, pred_type> merge_sorter;
 
+	item_type e = 1;
+	item_type prime = 26843545607;
+	item_type multiplier = 38261;
+
 	// Initialization phase: set parameters
 	{
 		report_timer timer("Initialization phase");
@@ -98,8 +101,10 @@ int main(int argc, char **argv) {
 	{
 		report_timer timer("First phase");
 		merge_sorter.begin();
-		for(memory_size_type i = 0; i < count; ++i)
-			merge_sorter.push(++e);
+		for(memory_size_type i = 0; i < count; ++i) {
+			merge_sorter.push(e);
+			e = (e * multiplier) % prime;
+		}
 		merge_sorter.end();
 	}
 

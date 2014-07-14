@@ -1,8 +1,14 @@
 #!/bin/bash
 
 # Setup parameters
-memory=100
-data=1000
+if [[ -z "$MEMORY" ]]; then
+	MEMORY=12000
+fi
+
+if [[ -z "$DATA" ]]; then
+	DATA=200000
+fi
+
 tmp_rootdir=/var/tmp/
 tmp_subdir=speed-test/
 tmp_fulldir=$tmp_rootdir$tmp_subdir
@@ -44,7 +50,7 @@ if [ "$1" != "faster" ]; then
 	for i in {1..3}
 	do
 		reset_dir
-		TMPDIR=$tmp_fulldir ./bin/master results${i}.tab $data $memory |& tee output${i}.txt;
+		TMPDIR=$tmp_fulldir ./bin/master results${i}.tab $DATA $MEMORY |& tee output${i}.txt;
 		echo
 		echo
 	done
@@ -57,7 +63,7 @@ if [ "$1" != "master" ]; then
 	for i in {1..3}
 	do
 		reset_dir
-		TMPDIR=$tmp_fulldir ./bin/faster results${i}.tab $data $memory |& tee output${i}.txt;
+		TMPDIR=$tmp_fulldir ./bin/faster results${i}.tab $DATA $MEMORY |& tee output${i}.txt;
 		echo
 		echo
 	done
