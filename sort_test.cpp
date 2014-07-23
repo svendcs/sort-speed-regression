@@ -35,10 +35,19 @@ void usage() {
 	std::cout << "Parameters: [report_file] [data/MiB = 10] [memory/MiB = 50]" << std::endl;
 }
 
-int main(int argc, char **argv) {
-	typedef memory_size_type item_type;
-	typedef std::less<item_type> pred_type;
+struct big_item {
+	memory_size_type a, b, c, d, e, f, g, h;
 
+	big_item() {}
+
+	big_item(memory_size_type i) : a(i), b(i), c(i), d(i), e(i), f(i), g(i), h(i) {}
+
+	bool operator<(const big_item & other) const {
+		return a < other.a;
+	}
+};
+
+int main(int argc, char **argv) {
 	// default parameters
 	std::string report_file;
 	size_t data = 10;
@@ -81,12 +90,12 @@ int main(int argc, char **argv) {
 	// init
 	tpie::tpie_init();
 
-	memory_size_type count = data / sizeof(item_type);
-	merge_sorter<item_type, false, pred_type> merge_sorter;
+	memory_size_type count = data / sizeof(big_item);
+	merge_sorter<big_item, false, std::less<big_item> > merge_sorter;
 
-	item_type e = 1;
-	item_type prime = 26843545607;
-	item_type multiplier = 38261;
+	big_item e(1);
+	memory_size_type prime = 26843545607;
+	memory_size_type multiplier = 38261;
 
 	// Initialization phase: set parameters
 	{
@@ -103,7 +112,7 @@ int main(int argc, char **argv) {
 		merge_sorter.begin();
 		for(memory_size_type i = 0; i < count; ++i) {
 			merge_sorter.push(e);
-			e = (e * multiplier) % prime;
+			e.a = (e.a * multiplier) % prime;
 		}
 		merge_sorter.end();
 	}
@@ -116,7 +125,7 @@ int main(int argc, char **argv) {
 	}
 
 	// Phase 3 - Pull
-	item_type hest = e;
+	big_item hest = e;
 	{
 		report_timer timer("Third phase");
 		#ifdef FASTER
@@ -124,12 +133,12 @@ int main(int argc, char **argv) {
 		#endif
 
 		for(memory_size_type i = 0; i < count; ++i) {
-			item_type j = merge_sorter.pull();
-			hest *= j;
+			big_item j = merge_sorter.pull();
+			hest.a *= j.a;
 		}
 	}
 
-	if(hest == e) std::cout << "Det var dog underligt." << std::endl;
+	if(!(hest < e) && !(e < hest)) std::cout << "Det var dog underligt." << std::endl;
 
 	// Clean-up
 	tpie_finish();
